@@ -21,7 +21,6 @@ package io.druid.storage.azure;
 
 import com.google.common.base.Predicate;
 import com.microsoft.azure.storage.StorageException;
-
 import io.druid.java.util.common.RetryUtils;
 
 import java.io.IOException;
@@ -53,7 +52,8 @@ public class AzureUtils
     }
   };
 
-  public static <T> T retryAzureOperation(Callable<T> f, int maxTries) throws Exception {
+  public static <T> T retryAzureOperation(Callable<T> f, int maxTries) throws Exception
+  {
     return RetryUtils.retry(f, AZURE_RETRY, maxTries);
   }
 }

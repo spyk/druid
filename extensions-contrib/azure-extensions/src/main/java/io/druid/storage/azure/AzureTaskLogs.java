@@ -24,7 +24,8 @@ import com.google.common.base.Throwables;
 import com.google.common.io.ByteSource;
 import com.google.inject.Inject;
 import com.microsoft.azure.storage.StorageException;
-
+import io.druid.java.util.common.IOE;
+import io.druid.java.util.common.StringUtils;
 import io.druid.java.util.common.logger.Logger;
 import io.druid.tasklogs.TaskLogs;
 
@@ -32,9 +33,9 @@ import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
 import java.net.URISyntaxException;
-import java.util.concurrent.Callable;
 
-public class AzureTaskLogs implements TaskLogs {
+public class AzureTaskLogs implements TaskLogs
+{
 
   private static final Logger log = new Logger(AzureTaskLogs.class);
 
@@ -42,34 +43,35 @@ public class AzureTaskLogs implements TaskLogs {
   private final AzureStorage azureStorage;
 
   @Inject
-  public AzureTaskLogs(AzureTaskLogsConfig config, AzureStorage azureStorage) {
+  public AzureTaskLogs(AzureTaskLogsConfig config, AzureStorage azureStorage)
+  {
     this.config = config;
     this.azureStorage = azureStorage;
   }
 
   @Override
-  public void pushTaskLog(final String taskid, final File logFile) throws IOException {
+  public void pushTaskLog(final String taskid, final File logFile) throws IOException
+  {
     final String taskKey = getTaskLogKey(taskid);
     log.info("Pushing task log %s to: %s", logFile, taskKey);
 
     try {
       AzureUtils.retryAzureOperation(
-          new Callable<Void>() {
-            @Override
-            public Void call() throws Exception {
-              azureStorage.uploadBlob(logFile, config.getContainer(), taskKey);
-              return null;
-            }
+          () -> {
+            azureStorage.uploadBlob(logFile, config.getContainer(), taskKey, true);
+            return null;
           },
           config.getMaxTries()
       );
-    } catch (Exception e) {
+    }
+    catch (Exception e) {
       throw Throwables.propagate(e);
     }
   }
 
   @Override
-  public Optional<ByteSource> streamTaskLog(final String taskid, final long offset) throws IOException {
+  public Optional<ByteSource> streamTaskLog(final String taskid, final long offset) throws IOException
+  {
     final String container = config.getContainer();
     final String taskKey = getTaskLogKey(taskid);
 
@@ -79,9 +81,11 @@ public class AzureTaskLogs implements TaskLogs {
       }
 
       return Optional.<ByteSource>of(
-          new ByteSource() {
+          new ByteSource()
+          {
             @Override
-            public InputStream openStream() throws IOException {
+            public InputStream openStream() throws IOException
+            {
               try {
                 final long start;
                 final long length = azureStorage.getBlobLength(container, taskKey);
@@ -99,20 +103,23 @@ public class AzureTaskLogs implements TaskLogs {
 
                 return stream;
 
-              } catch(Exception e) {
+              }
+              catch (Exception e) {
                 throw new IOException(e);
               }
             }
           }
       );
-    } catch (StorageException | URISyntaxException e) {
-      throw new IOException(String.format("Failed to stream logs from: %s", taskKey), e);
+    }
+    catch (StorageException | URISyntaxException e) {
+      throw new IOE(e, "Failed to stream logs from: %s", taskKey);
     }
   }
 
 
-  private String getTaskLogKey(String taskid) {
-    return String.format("%s/%s/log", config.getPrefix(), taskid);
+  private String getTaskLogKey(String taskid)
+  {
+    return StringUtils.format("%s/%s/log", config.getPrefix(), taskid);
   }
 
   @Override

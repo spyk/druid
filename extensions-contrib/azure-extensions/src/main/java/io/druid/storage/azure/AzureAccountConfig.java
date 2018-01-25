@@ -45,11 +45,13 @@ public class AzureAccountConfig
   @NotNull
   private String container;
 
+  @SuppressWarnings("unused") // Used by Jackson deserialization?
   public void setProtocol(String protocol)
   {
     this.protocol = protocol;
   }
 
+  @SuppressWarnings("unused") // Used by Jackson deserialization?
   public void setMaxTries(int maxTries)
   {
     this.maxTries = maxTries;
@@ -60,6 +62,7 @@ public class AzureAccountConfig
     this.account = account;
   }
 
+  @SuppressWarnings("unused") // Used by Jackson deserialization?
   public void setKey(String key)
   {
     this.key = key;
@@ -70,13 +73,28 @@ public class AzureAccountConfig
     this.container = container;
   }
 
-  public String getProtocol() { return protocol; }
+  public String getProtocol()
+  {
+    return protocol;
+  }
 
-  public int getMaxTries() { return maxTries; }
+  public int getMaxTries()
+  {
+    return maxTries;
+  }
 
-  public String getAccount() { return account; }
+  public String getAccount()
+  {
+    return account;
+  }
 
-  public String getKey() { return key;}
+  public String getKey()
+  {
+    return key;
+  }
 
-  public String getContainer() { return container; }
+  public String getContainer()
+  {
+    return container;
+  }
 }

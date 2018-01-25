@@ -25,7 +25,6 @@ import com.microsoft.azure.storage.blob.CloudBlobClient;
 import com.microsoft.azure.storage.blob.CloudBlobContainer;
 import com.microsoft.azure.storage.blob.CloudBlockBlob;
 import com.microsoft.azure.storage.blob.ListBlobItem;
-
 import io.druid.java.util.common.logger.Logger;
 
 import java.io.File;
@@ -81,24 +80,30 @@ public class AzureStorage
 
   }
 
-  public void uploadBlob(final File file, final String containerName, final String blobPath)
+  public void uploadBlob(
+      final File file,
+      final String containerName,
+      final String blobPath,
+      final boolean replaceExisting
+  )
       throws IOException, StorageException, URISyntaxException
 
   {
     CloudBlobContainer container = getCloudBlobContainer(containerName);
     try (FileInputStream stream = new FileInputStream(file)) {
       CloudBlockBlob blob = container.getBlockBlobReference(blobPath);
-      blob.upload(stream, file.length());
+
+      if (!replaceExisting && blob.exists()) {
+        log.info("Skipping push because blob [%s] exists && replaceExisting == false", blobPath);
+      } else {
+        blob.upload(stream, file.length());
+      }
     }
   }
 
-  public CloudBlockBlob getBlob(final String containerName, final String blobPath)
-      throws URISyntaxException, StorageException {
-    return getCloudBlobContainer(containerName).getBlockBlobReference(blobPath);
-  }
-
   public long getBlobLength(final String containerName, final String blobPath)
-      throws URISyntaxException, StorageException {
+      throws URISyntaxException, StorageException
+  {
     return getCloudBlobContainer(containerName).getBlockBlobReference(blobPath).getProperties().getLength();
   }
 
@@ -109,8 +114,8 @@ public class AzureStorage
     return container.getBlockBlobReference(blobPath).openInputStream();
   }
 
-  public boolean getBlobExists(String container, String blobPath)
-      throws URISyntaxException, StorageException {
+  public boolean getBlobExists(String container, String blobPath) throws URISyntaxException, StorageException
+  {
     return getCloudBlobContainer(container).getBlockBlobReference(blobPath).exists();
   }
 }
